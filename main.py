@@ -5,27 +5,31 @@ import concurrent.futures
 from exchanges.testswap import Testswap
 from exchanges.uniswap import Uniswap
 from exchanges.pancakeswap import Pancakeswap
+from exchanges.honeyswap import Honeyswap
 
 FETCH = True
 SAVE_IMAGE = False
 
-RATIO = 1#.9999995
-# RATIO = 1.000000001
+FEE_RATIO = .997
+# FEE_RATIO = 1.000000001
 
 if FETCH:
 
     # Execute the query on the transport
     G=nx.DiGraph()
-    exchanges = [Testswap, Uniswap, Pancakeswap]
+    exchanges = [Testswap, Uniswap, Pancakeswap, Honeyswap]
     def fetch_pairs(exchange):
         pairs = exchange().fetch_pairs()
+        i = 0
         for pair in pairs:
             if pair.price == 0:
                 continue
-            G.add_node(pair.token0)
-            G.add_node(pair.token1)
-            G.add_edge(pair.token0, pair.token1, weight=-1 * math.log(pair.price * RATIO), exchange=pair.exchange)
-            print(dict(token0=pair.token0, token1=pair.token1, weight=-1 * math.log(pair.price * RATIO), exchange=pair.exchange))
+            G.add_node(pair.token0, name=pair.token0_name)
+            G.add_node(pair.token1, name=pair.token1_name)
+            G.add_edge(pair.token0, pair.token1, weight=-1 * math.log(pair.price * FEE_RATIO), price=pair.price, exchange=pair.exchange)
+            i +=1
+            # print(dict(token0=pair.token0, token1=pair.token1, weight=-1 * math.log(pair.price * FEE_RATIO), exchange=pair.exchange))
+        print(f"Got {i} pairs from {exchange}")
     
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
         # Start the load operations and mark each future with its URL
@@ -47,15 +51,20 @@ if SAVE_IMAGE:
     nx.draw(G, ax=f.add_subplot(111), with_labels=True)
     f.savefig("graph.png")
 
+node_lookup = dict(G.nodes(data=True))
+
 for node in ["USDC"]:#G.nodes():
     try:
         cycle = nx.find_negative_cycle(G, source=node)
         print("CYCLE FOUND!!!")
+        total_factor = 1
         for (i, node) in enumerate(cycle):
             if i + 1 < len(cycle):
                 edge_data = G.get_edge_data(node, cycle[i + 1])
-                print(node, 2 ** (-1 * edge_data["weight"] ), edge_data["exchange"])
+                total_factor *= edge_data["price"] * FEE_RATIO
+                print(node, node_lookup[node]["name"], edge_data["price"], edge_data["exchange"])
             else:
                 print(node)
+        print("total factor", total_factor)
     except nx.exception.NetworkXError:
         pass

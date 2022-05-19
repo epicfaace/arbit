@@ -10,7 +10,9 @@ class Pancakeswap(Exchange):
         for pair in pairs:
             yield Pair(
                 token0=pair['base_symbol'],
+                token0_name=pair['base_name'],
                 token1=pair['quote_symbol'],
+                token1_name=pair['quote_name'],
                 exchange="pancakeswap",
                 price=float(pair['price'])
             )

@@ -2,10 +2,10 @@ from .exchange import Exchange, Pair
 from gql import gql, Client
 from gql.transport.aiohttp import AIOHTTPTransport
 
-class Uniswap(Exchange):
+class Honeyswap(Exchange):
     def fetch_pairs(self):
         # Select your transport with a defined url endpoint
-        transport = AIOHTTPTransport(url="https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2")
+        transport = AIOHTTPTransport(url="https://api.thegraph.com/subgraphs/name/kirkins/honeyswap")
 
         # Create a GraphQL client using the defined transport
         client = Client(transport=transport, fetch_schema_from_transport=True)
