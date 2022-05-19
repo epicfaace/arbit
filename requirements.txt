@@ -1,3 +1,4 @@
 gql[all]
 networkx
 matplotlib
+requests
